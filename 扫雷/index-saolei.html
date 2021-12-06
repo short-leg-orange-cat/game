@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            text-align: center;
+        }
+
+        #game-main {
+            display: inline-block;
+            border: 3px #a4a4a4 solid;
+            border-radius: 20px;
+            padding: 5px;
+
+        }
+
+        .table {
+            border-collapse: separate;
+            text-indent: initial;
+            border-spacing: 0px;
+        }
+
+        td {
+            background-color: #a4a4a4;
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 1px;
+        }
+
+        .showtd {
+            font-size: 1px;
+            background-color: aliceblue;
+        }
+
+        h1 {
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .showlei {
+            background-image: url(./zhadan.png);
+            background-size: 20px 20px
+        }
+
+        #ndxz button {
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>扫雷</h1>
+    <div id="ndxz">
+        <button id="ndxz-1">初级</button>
+        <button id="ndxz-2">中级</button>
+        <button id="ndxz-3">高级</button>
+    </div>
+    <div id="game-main">
+    </div>
+
+    <script>
+        //刚开始思路不对写的很乱，很多低级错误，像是HANG, LIE，只要参数有数组就可以获取，当时脑子全是浆糊直接用参数带入导致很臃肿，懒得再改了
+        //函数全部用参数是为了可以增加难度按钮，刚开始没想到，后面全部大改，以后要想清楚功能，代码可复用性，易维护性，
+
+        //生成地图
+        const app = (mainArray, HANG, LIE, lei) => {
+            let div = document.querySelector('#game-main')
+            let table = document.createElement('table')
+            for (let i = 0; i < HANG; i++) {
+                let tr = document.createElement('tr')
+                for (let j = 0; j < LIE; j++) {
+                    let td = document.createElement('td')
+                    td.id = i + '-' + j
+                    if (mainArray[i][j].islei) {
+                        td.innerHTML = '@'
+                    } else {
+                        td.innerHTML = mainArray[i][j].isnumber
+                    }
+                    tr.appendChild(td)
+                }
+                table.appendChild(tr)
+            }
+            div.appendChild(table)
+        }
+
+        // 创建数组
+        const init = (HANG, LIE, lei) => {
+            let mainArray = []
+            for (let i = 0; i < HANG; i++) {
+                mainArray[i] = []
+                for (let j = 0; j < LIE; j++) {
+                    mainArray[i][j] = {
+                        isnumber: '',
+                        isshow: false,
+                        islei: false
+                    }
+                }
+            }
+            //随机生成雷
+            let count = 0
+            while (count < lei) {
+                let x = parseInt(Math.random() * HANG)
+                let y = parseInt(Math.random() * LIE)
+                if (mainArray[x][y].islei === false) {
+                    mainArray[x][y].islei = true
+                }
+                count++
+            }
+            //判断周围雷的数量
+            for (let i = 0; i < HANG; i++) {
+                for (let j = 0; j < LIE; j++) {
+                    let count = 0
+                    //左上
+                    if (i - 1 >= 0 && j - 1 >= 0) {
+                        if (mainArray[i - 1][j - 1].islei) {
+                            count++
+                        }
+                    }
+                    //上
+                    if (i - 1 >= 0) {
+                        if (mainArray[i - 1][j].islei) {
+                            count++
+                        }
+                    }
+                    //右上
+                    if (i - 1 >= 0 && j + 1 < LIE) {
+                        if (mainArray[i - 1][j + 1].islei) {
+                            count++
+                        }
+                    }
+                    //左
+                    if (j - 1 >= 0) {
+                        if (mainArray[i][j - 1].islei) {
+                            count++
+                        }
+                    }
+                    //右
+                    if (j + 1 < LIE) {
+                        if (mainArray[i][j + 1].islei) {
+                            count++
+                        }
+                    }
+                    //左下
+                    if (i + 1 < HANG && j - 1 >= 0) {
+                        if (mainArray[i + 1][j - 1].islei) {
+                            count++
+                        }
+                    }
+                    //下
+                    if (i + 1 < HANG) {
+                        if (mainArray[i + 1][j].islei) {
+                            count++
+                        }
+                    }
+                    //右下
+                    if (i + 1 < HANG && j + 1 < LIE) {
+                        if (mainArray[i + 1][j + 1].islei) {
+                            count++
+                        }
+                    }
+                    if (count > 0) {
+                        mainArray[i][j].isnumber = count
+                    }
+
+                }
+            }
+            return mainArray
+        }
+
+        //判断是数字还是空格
+        let a = 0
+        const showNumber = (mainArray, i, j, HANG, LIE,) => {
+            let td1 = document.getElementById(i + '-' + j)
+            if (mainArray[i][j].isshow == false) {
+                if (mainArray[i][j].isnumber !== '') {
+                    td1.classList.add('showtd')
+                    mainArray[i][j].isshow = true
+                    a = a + 1
+                    return
+                }
+                //是空格递归展开直到是数字为止
+                if (mainArray[i][j].isnumber == '') {
+                    td1.classList.add('showtd')
+                    mainArray[i][j].isshow = true
+                    a = a + 1
+                    //左上
+                    if (i - 1 >= 0 && j - 1 >= 0) {
+                        showNumber(mainArray, i - 1, j - 1, HANG, LIE,)
+                    }
+                    //上
+                    if (i - 1 >= 0) {
+                        showNumber(mainArray, i - 1, j, HANG, LIE)
+                    }
+                    //右上
+                    if (i - 1 >= 0 && j + 1 < LIE) {
+                        showNumber(mainArray, i - 1, j + 1, HANG, LIE)
+                    }
+                    //左
+                    if (j - 1 >= 0) {
+                        showNumber(mainArray, i, j - 1, HANG, LIE)
+                    }
+                    //右
+                    if (j + 1 < LIE) {
+                        showNumber(mainArray, i, j + 1, HANG, LIE)
+
+                    }
+                    //左下
+                    if (i + 1 < HANG && j - 1 >= 0) {
+                        showNumber(mainArray, i + 1, j - 1, HANG, LIE)
+                    }
+                    //下
+                    if (i + 1 < HANG) {
+                        showNumber(mainArray, i + 1, j, HANG, LIE)
+                    }
+                    //右下
+                    if (i + 1 < HANG && j + 1 < LIE) {
+                        showNumber(mainArray, i + 1, j + 1, HANG, LIE)
+                    }
+                }
+            }
+        }
+
+        //游戏结束后显示所有雷
+        const gameShow = (mainArray, HANG, LIE) => {
+            for (let i = 0; i < HANG; i++) {
+                for (let j = 0; j < LIE; j++) {
+                    if (mainArray[i][j].islei == true && mainArray[i][j].isshow == false) {
+                        let td = document.getElementById(i + '-' + j)
+                        td.classList.add('showlei')
+                    }
+                }
+            }
+        }
+
+        //胜利条件
+        const leiNumber = (array) => {
+            let c = 0
+            for (let i = 0; i < array.length; i++) {
+                for (let j = 0; j < array[i].length; j++) {
+                    if (array[i][j].islei == true) {
+                        c++
+                    }
+                }
+            }
+            let b = setInterval(() => {
+                if ((array.length * array[0].length) - a == c) {
+                    alert('恭喜你赢得胜利！！选择难度可继续挑战')
+                    clearInterval(b)
+                }
+            })
+        }
+
+
+
+
+        //绑定事件
+        const tdclick = (mainArray, HANG, LIE, lei) => {
+            let td = document.querySelectorAll('td')
+            for (let i = 0; i < td.length; i++) {
+                td[i].addEventListener('click', (event) => {
+                    let x = Number(event.target.id.split('-')[0])
+                    let y = Number(event.target.id.split('-')[1])
+                    if (mainArray[x][y].isshow == false) {
+                        //当点击的是雷，游戏结束，并2秒后刷新
+                        if (mainArray[x][y].islei) {
+                            event.target.classList.add('showlei')
+                            mainArray[x][y].isshow = true
+                            gameShow(mainArray, HANG, LIE)
+                            let div1 = document.querySelector('#game-main')
+                            alert('游戏失败,1秒后将重新开始')
+                            setTimeout(() => {
+                                div1.innerHTML = ''
+                                a = 0
+                                let mainArray = init(HANG, LIE, lei)
+                                app(mainArray, HANG, LIE, lei)
+                                tdclick(mainArray, HANG, LIE, lei)
+                                ndChanger()
+                                leiNumber(mainArray)
+                            }, 1000)
+                        }
+                        showNumber(mainArray, x, y, HANG, LIE)
+                    }
+                })
+
+
+            }
+        }
+
+        //难度选择，增加难度只需更改HANG, LIE
+        const ndChanger = () => {
+            let id = document.querySelectorAll('button')
+            id[0].onclick = () => {
+                let div1 = document.querySelector('#game-main')
+                div1.innerHTML = ''
+                let HANG = 10
+                let LIE = 10
+                let lei = parseInt(HANG * LIE / 4)
+                let mainArray = init(HANG, LIE, lei)
+                a = 0
+                app(mainArray, HANG, LIE, lei)
+                tdclick(mainArray, HANG, LIE, lei)
+                ndChanger()
+                leiNumber(mainArray)
+            }
+            id[1].onclick = () => {
+                let div1 = document.querySelector('#game-main')
+                div1.innerHTML = ''
+                a = 0
+                let HANG = 15
+                let LIE = 15
+                let lei = parseInt(HANG * LIE / 4)
+                let mainArray = init(HANG, LIE, lei)
+                app(mainArray, HANG, LIE, lei)
+                tdclick(mainArray, HANG, LIE, lei)
+                ndChanger()
+                leiNumber(mainArray)
+
+
+            }
+            id[2].onclick = () => {
+                let div1 = document.querySelector('#game-main')
+                div1.innerHTML = ''
+                a = 0
+                let HANG = 20
+                let LIE = 20
+                let lei = parseInt(HANG * LIE / 4)
+                let mainArray = init(HANG, LIE, lei)
+                app(mainArray, HANG, LIE, lei)
+                tdclick(mainArray, HANG, LIE, lei)
+                ndChanger()
+                leiNumber(mainArray)
+
+            }
+        }
+
+        const mianfunction = () => {
+            let HANG = 10, LIE = HANG, lei = parseInt(HANG * LIE / 4)
+            let mainArray = init(HANG, LIE, lei)
+            app(mainArray, HANG, LIE, lei)
+            tdclick(mainArray, HANG, LIE, lei)
+            ndChanger()
+            leiNumber(mainArray)
+        }
+        mianfunction()
+    </script>
+</body>
+
+</html>
